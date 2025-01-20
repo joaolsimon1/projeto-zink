@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 
 # Função para processar o arquivo Excel
 def process_excel(file):
-    df = pd.read_excel(file, sheet_name='Dados Brutos', skiprows=1)
-    df = df.iloc[:, 1:]  # Remove a primeira coluna vazia
+    if file_type == 'xlsx':
+        df = pd.read_excel(file, sheet_name='Dados Brutos')
+    elif file_type == 'csv':
+        df = pd.read_csv(file)
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
 
@@ -65,7 +67,7 @@ with st.sidebar:
     selected_tab = st.radio("Escolha uma opção:", ["Gráficos", "Tabelas"])
 
 # Upload do arquivo na barra lateral
-uploaded_file = st.sidebar.file_uploader("Envie o arquivo Excel", type=['xlsx'])
+uploaded_file = st.sidebar.file_uploader("Envie o arquivo Excel", type=['xlsx', 'csv'])
 
 if uploaded_file:
     df_abs, df_des, merged_data = process_excel(uploaded_file)
