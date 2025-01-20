@@ -61,15 +61,16 @@ def process_excel(file):
 # Configuração da interface do Streamlit
 st.title("Processamento de Dados Industriais")
 
-# Sidebar para selecionar gráficos ou tabelas
+# Sidebar para seleção e upload de arquivo
 with st.sidebar:
     st.header("Navegação")
     selected_tab = st.radio("Escolha uma opção:", ["Gráficos", "Tabelas"])
-
-# Upload do arquivo na barra lateral
-uploaded_file = st.sidebar.file_uploader("Envie o arquivo Excel", type=['xlsx', 'csv'])
+    uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
 
 if uploaded_file:
+    # Determina o tipo do arquivo
+    file_type = 'xlsx' if uploaded_file.name.endswith('.xlsx') else 'csv'
+      
     df_abs, df_des, merged_data = process_excel(uploaded_file)
     
     if selected_tab == "Gráficos":
