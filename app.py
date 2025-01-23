@@ -58,7 +58,7 @@ def process_excel(df):
     return df_abs, df_des, merged_data
 
 # Configuração da interface do Streamlit
-st.title("Processamento de Dados Industriais")
+st.title("Processamento de Dados")
 
 # Sidebar para seleção e upload de arquivo
 with st.sidebar:
