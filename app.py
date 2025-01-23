@@ -4,13 +4,12 @@ import datetime as dt
 import matplotlib.pyplot as plt
 
 # Função para processar o arquivo Excel
-def process_excel(file):
-    if file_type == 'xlsx':
-        df = pd.read_excel(file, sheet_name='Dados Brutos')
-    elif file_type == 'csv':
-        df = pd.read_csv(file)
-    df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
+def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
+    df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
+    # Converter as colunas 1:4 para float
+    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV','ETAPA_ATUAL', 'NUMERO_CICLO']] = df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']].apply(pd.to_numeric, errors='coerce')
+
 
     # Fator de Correção
     df_etapa_1 = df[df['ETAPA_ATUAL'] == 1]
@@ -68,9 +67,7 @@ with st.sidebar:
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
 
 if uploaded_file:
-    # Determina o tipo do arquivo
-    file_type = 'xlsx' if uploaded_file.name.endswith('.xlsx') else 'csv'
-      
+
     df_abs, df_des, merged_data = process_excel(uploaded_file)
     
     if selected_tab == "Gráficos":
