@@ -1,18 +1,12 @@
 import streamlit as st
 import pandas as pd
 import datetime as dt
-import matplotlib.pyplot as plt
 import io
 
-if 'resultado' not in st.session_state:
-    st.session_state['resultado'] = None
-
-# Função para processar o arquivo Excel
+@st.cache_data
 def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
-    
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
-    # Converter as colunas 1:4 para float
     cols_to_convert = ['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
     df[cols_to_convert] = df[cols_to_convert].astype(float, errors='ignore')
 
@@ -58,9 +52,7 @@ def process_excel(df):
 
     merged_data = pd.merge(des_aggregated, abs_aggregated, on='NUMERO_CICLO')
 
-    # Retornar os resultados
     return df_abs, df_des, merged_data
-
 
 # Configuração da interface do Streamlit
 st.title("Processamento de Dados")
@@ -85,20 +77,31 @@ if uploaded_file:
         st.session_state['merged_data'] = merged_data
         st.success("Processamento concluído! Tabelas disponíveis abaixo.")
 
-    # Botão de download na sidebar
-    with st.sidebar:
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
-            st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-            st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
-        buffer.seek(0)
-        
-        st.download_button(
-            label="Baixar Resultados",
-            data=buffer,
-            file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+    # Exibir tabelas se o processamento foi concluído
+    if 'df_abs' in st.session_state:
+        st.subheader("4 - Absorção")
+        st.dataframe(st.session_state['df_abs'])
+
+        st.subheader("6 - Dessorção Corrigida")
+        st.dataframe(st.session_state['df_des'])
+
+        st.subheader("Tabela Final")
+        st.dataframe(st.session_state['merged_data'])
+
+        # Botão de download
+        with st.sidebar:
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
+                st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+                st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
+            buffer.seek(0)
+
+            st.download_button(
+                label="Baixar Resultados",
+                data=buffer,
+                file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
