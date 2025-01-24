@@ -77,19 +77,13 @@ if uploaded_file:
     elif uploaded_file.name.endswith('.csv'):
         df = pd.read_csv(uploaded_file, sep=";", header=None)
 
-    # Processar dados
-    df_abs, df_des, merged_data = process_excel(df)
-    st.session_state['resultado'] = merged_data
-
-    # Exibir as tabelas
-    st.subheader("4 - Absorção")
-    st.dataframe(df_abs)
-
-    st.subheader("6 - Dessorção Corrigida")
-    st.dataframe(df_des)
-
-    st.subheader("Tabela Final")
-    st.dataframe(merged_data)
+    # Botão para iniciar o processamento
+    if st.button("Iniciar Processamento"):
+        df_abs, df_des, merged_data = process_excel(df)
+        st.session_state['df_abs'] = df_abs
+        st.session_state['df_des'] = df_des
+        st.session_state['merged_data'] = merged_data
+        st.success("Processamento concluído! Tabelas disponíveis abaixo.")
 
     # Botão de download na sidebar
     with st.sidebar:
