@@ -75,7 +75,7 @@ if uploaded_file:
         st.session_state['df_abs'] = df_abs
         st.session_state['df_des'] = df_des
         st.session_state['merged_data'] = merged_data
-        st.success("Processamento concluído! O botão de download está na sidebar.")
+        st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
 
     # Exibir tabelas se o processamento foi concluído
     if 'df_abs' in st.session_state:
