@@ -82,19 +82,19 @@ if uploaded_file:
         st.markdown('>>>>>Gráficos<<<<')
 
         # Botão de download
-        with st.sidebar:
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-                st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
-                st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-                st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
-            buffer.seek(0)
+        #with st.sidebar:
+        #    buffer = io.BytesIO()
+        #    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        #        st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
+        #        st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+        #        st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
+        #    buffer.seek(0)
 
-            st.download_button(
-                label="Baixar Resultados",
-                data=buffer,
-                file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
+        #    st.download_button(
+        #        label="Baixar Resultados",
+        #        data=buffer,
+        #        file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+        #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        #    )
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
