@@ -6,7 +6,12 @@ import matplotlib.pyplot as plt
 # Função para processar o arquivo Excel
 def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
+
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
+    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']] = (
+    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']]
+    .replace(',', '.', regex=True)  # Substitui vírgulas por pontos
+    )
     # Converter as colunas 1:4 para float
     df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV','ETAPA_ATUAL', 'NUMERO_CICLO']] = df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']].apply(pd.to_numeric, errors='coerce')
 
@@ -66,9 +71,16 @@ with st.sidebar:
     selected_tab = st.radio("Escolha uma opção:", ["Gráficos", "Tabelas"])
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
 
+    
+
 if uploaded_file:
 
-    df_abs, df_des, merged_data = process_excel(uploaded_file)
+    if uploaded_file.name.endswith('.xlsx'):
+        df = pd.read_excel(uploaded_file)
+    elif uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file,  sep=";", header=None)
+
+    df_abs, df_des, merged_data = process_excel(df)
     
     if selected_tab == "Gráficos":
         st.subheader("Visualização de Gráficos")
@@ -83,31 +95,31 @@ if uploaded_file:
         st.pyplot(fig)
 
     elif selected_tab == "Tabelas":
-        st.sidebar.header("Tabelas")
-        tab = st.sidebar.radio("Selecione a tabela:", ["Absorção", "Dessorção Corrigida", "Tabela Final"])
+        tab1, tab2, tab3 = st.tabs(["Absorção", "Dessorção Corrigida", "Tabela Final"])
         
-        if tab == "Absorção":
+        with tab1:
             st.subheader("4 - Absorção")
             st.dataframe(df_abs)
-        elif tab == "Dessorção Corrigida":
+        with tab2:
             st.subheader("6 - Dessorção Corrigida")
             st.dataframe(df_des)
-        elif tab == "Tabela Final":
+        with tab3:
             st.subheader("Tabela Final")
             st.dataframe(merged_data)
+    
+    # Botão de download na sidebar
+    with st.sidebar:
+        with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
+            df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
+            df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+            merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
 
-    # Botão de download
-    with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
-        df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
-        df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-        merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
-
-    with open('Resultados_Industriais.xlsx', 'rb') as file:
-        st.download_button(
-            label="Baixar Resultados",
-            data=file,
-            file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+        with open('Resultados_Industriais.xlsx', 'rb') as file:
+            st.download_button(
+                label="Baixar Resultados",
+                data=file,
+                file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
