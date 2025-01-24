@@ -1,10 +1,11 @@
 import streamlit as st
 
-tab1, tab2, tab3 = st.tabs(["Absorção", "Dessorção Corrigida", "Tabela Final"])
+
 
 if 'df_abs' in st.session_state:
     st.markdown('As tabelas podem ser baixadas individualmente no ícone no canto superior direito de cada uma delas.')
 
+tab1, tab2, tab3 = st.tabs(["Absorção", "Dessorção Corrigida", "Tabela Final"])
 
 # Exibir tabelas se o processamento foi concluído
 if 'df_abs' in st.session_state:
