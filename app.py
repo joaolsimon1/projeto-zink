@@ -65,10 +65,9 @@ def process_excel(df):
 # Configuração da interface do Streamlit
 st.title("Processamento de Dados")
 
-# Sidebar para seleção e upload de arquivo
+# Sidebar para upload de arquivo
 with st.sidebar:
-    st.header("Navegação")
-    selected_tab = st.radio("Escolha uma opção:", ["Gráficos", "Tabelas"])
+    st.header("Envio de Arquivo")
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
 
 if uploaded_file:
@@ -82,29 +81,15 @@ if uploaded_file:
     df_abs, df_des, merged_data = process_excel(df)
     st.session_state['resultado'] = merged_data
 
-    # Exibir os gráficos ou tabelas
-    if selected_tab == "Gráficos":
-        st.subheader("Visualização de Gráficos")
-        fig, ax = plt.subplots()
-        ax.plot(df_abs['NUMERO_CICLO'], df_abs['MaxAcumuladoABS'], label='Max Acumulado ABS')
-        ax.set_xlabel("Número do Ciclo")
-        ax.set_ylabel("Máximo Acumulado ABS")
-        ax.set_title("Máximo Acumulado ABS por Ciclo")
-        ax.legend()
-        st.pyplot(fig)
+    # Exibir as tabelas
+    st.subheader("4 - Absorção")
+    st.dataframe(df_abs)
 
-    elif selected_tab == "Tabelas":
-        tab1, tab2, tab3 = st.tabs(["Absorção", "Dessorção Corrigida", "Tabela Final"])
-        
-        with tab1:
-            st.subheader("4 - Absorção")
-            st.dataframe(df_abs)
-        with tab2:
-            st.subheader("6 - Dessorção Corrigida")
-            st.dataframe(df_des)
-        with tab3:
-            st.subheader("Tabela Final")
-            st.dataframe(merged_data)
+    st.subheader("6 - Dessorção Corrigida")
+    st.dataframe(df_des)
+
+    st.subheader("Tabela Final")
+    st.dataframe(merged_data)
 
     # Botão de download na sidebar
     with st.sidebar:
