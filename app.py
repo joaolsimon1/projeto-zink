@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
-
+import io
 
 if 'resultado' not in st.session_state:
     st.session_state['resultado'] = None
-
 
 # Função para processar o arquivo Excel
 def process_excel(df):
@@ -14,8 +13,8 @@ def process_excel(df):
     
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
     # Converter as colunas 1:4 para float
-    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV','ETAPA_ATUAL', 'NUMERO_CICLO']] = df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']].apply(pd.to_numeric, errors='coerce')
-
+    cols_to_convert = ['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
+    df[cols_to_convert] = df[cols_to_convert].astype(float, errors='ignore')
 
     # Fator de Correção
     df_etapa_1 = df[df['ETAPA_ATUAL'] == 1]
@@ -29,21 +28,20 @@ def process_excel(df):
     ).reset_index()
 
     media['erro_p'] = (media['media_c3'] - media['media_c2']) / media['media_c3'] * 100
-    media['fator'] = (-media['erro_p'] / 100) + 1
+    media['fator'] = 1 - (media['erro_p'] / 100)
 
     df = df.merge(media[['NUMERO_CICLO', 'erro_p', 'fator']], on='NUMERO_CICLO', how='left')
 
     # Absorção
-    df_abs = df[df['ETAPA_ATUAL'] == 4]
+    df_abs = df[df['ETAPA_ATUAL'] == 4].copy()
     df_abs['MFC05_corrigido'] = df_abs['MFC05_PV'] * df_abs['fator']
     df_abs['DiffABS'] = df_abs['MFC02_PV'] - df_abs['MFC05_corrigido']
-    df_abs['Diff_corrigidaABS'] = df_abs['DiffABS'] * 5 / 60
-    df_abs.loc[df_abs['PC02_PV'] <= 3.485, 'Diff_corrigidaABS'] = 0
+    df_abs['Diff_corrigidaABS'] = (df_abs['DiffABS'] * 5 / 60).where(df_abs['PC02_PV'] > 3.485, 0)
     df_abs['AcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['Diff_corrigidaABS'].cumsum()
     df_abs['MaxAcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['AcumuladoABS'].transform('max')
 
     # Dessorção
-    df_des = df[df['ETAPA_ATUAL'] == 6]
+    df_des = df[df['ETAPA_ATUAL'] == 6].copy()
     df_des['DiffDES'] = df_des['MFC02_PV'] - df_des['MFC05_PV']
     df_des['Diff_corrigidaDES'] = df_des['DiffDES'] * 5 / 60
     df_des['AcumuladoDES'] = df_des.groupby('NUMERO_CICLO')['Diff_corrigidaDES'].cumsum()
@@ -73,23 +71,20 @@ with st.sidebar:
     selected_tab = st.radio("Escolha uma opção:", ["Gráficos", "Tabelas"])
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
 
-    
-
 if uploaded_file:
-
+    # Ler o arquivo
     if uploaded_file.name.endswith('.xlsx'):
         df = pd.read_excel(uploaded_file)
     elif uploaded_file.name.endswith('.csv'):
-        df = pd.read_csv(uploaded_file,  sep=";", header=None)
+        df = pd.read_csv(uploaded_file, sep=";", header=None)
 
+    # Processar dados
     df_abs, df_des, merged_data = process_excel(df)
-
     st.session_state['resultado'] = merged_data
-    
+
+    # Exibir os gráficos ou tabelas
     if selected_tab == "Gráficos":
         st.subheader("Visualização de Gráficos")
-        
-        # Exemplo de gráfico
         fig, ax = plt.subplots()
         ax.plot(df_abs['NUMERO_CICLO'], df_abs['MaxAcumuladoABS'], label='Max Acumulado ABS')
         ax.set_xlabel("Número do Ciclo")
@@ -111,21 +106,20 @@ if uploaded_file:
             st.subheader("Tabela Final")
             st.dataframe(merged_data)
 
-else:
-    st.info("Envie um arquivo Excel pela barra lateral para começar.")
-    
-if st.session_state['resultado'] != None:   
     # Botão de download na sidebar
     with st.sidebar:
-        with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
             df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
             merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
-
-        with open('Resultados_Industriais.xlsx', 'rb') as file:
-            st.download_button(
-                label="Baixar Resultados",
-                data=file,
-                file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            
+        buffer.seek(0)
+        
+        st.download_button(
+            label="Baixar Resultados",
+            data=buffer,
+            file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+else:
+    st.info("Envie um arquivo Excel pela barra lateral para começar.")
