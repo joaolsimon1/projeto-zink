@@ -6,12 +6,8 @@ import matplotlib.pyplot as plt
 # Função para processar o arquivo Excel
 def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
-
+    
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
-    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']] = (
-    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']]
-    .replace(',', '.', regex=True)  # Substitui vírgulas por pontos
-    )
     # Converter as colunas 1:4 para float
     df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV','ETAPA_ATUAL', 'NUMERO_CICLO']] = df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']].apply(pd.to_numeric, errors='coerce')
 
@@ -61,6 +57,7 @@ def process_excel(df):
 
     # Retornar os resultados
     return df_abs, df_des, merged_data
+
 
 # Configuração da interface do Streamlit
 st.title("Processamento de Dados")
