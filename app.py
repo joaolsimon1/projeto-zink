@@ -3,6 +3,11 @@ import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 
+
+if 'resultado' not in st.session_state:
+    st.session_state['resultado'] = None
+
+
 # Função para processar o arquivo Excel
 def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
@@ -78,6 +83,8 @@ if uploaded_file:
         df = pd.read_csv(uploaded_file,  sep=";", header=None)
 
     df_abs, df_des, merged_data = process_excel(df)
+
+    st.session_state['resultado'] = merged_data
     
     if selected_tab == "Gráficos":
         st.subheader("Visualização de Gráficos")
@@ -107,7 +114,7 @@ if uploaded_file:
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
     
-if merged_data:   
+if st.session_state['resultado'] != None:   
     # Botão de download na sidebar
     with st.sidebar:
         with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
