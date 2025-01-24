@@ -89,9 +89,9 @@ if uploaded_file:
     with st.sidebar:
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
-            df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-            merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
+            st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
+            st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+            st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
         buffer.seek(0)
         
         st.download_button(
