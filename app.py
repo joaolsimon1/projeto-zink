@@ -103,20 +103,21 @@ if uploaded_file:
         with tab3:
             st.subheader("Tabela Final")
             st.dataframe(merged_data)
-    
-    # Botão de download na sidebar
-    with st.sidebar:
-        with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
-            df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
-            df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-            merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
 
-        with open('Resultados_Industriais.xlsx', 'rb') as file:
-            st.download_button(
-                label="Baixar Resultados",
-                data=file,
-                file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
+    
+# Botão de download na sidebar
+with st.sidebar:
+    with pd.ExcelWriter('Resultados_Industriais.xlsx') as writer:
+        df_abs.to_excel(writer, sheet_name='4_Absorção', index=False)
+        df_des.to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+        merged_data.to_excel(writer, sheet_name='Tabela Final', index=False)
+
+    with open('Resultados_Industriais.xlsx', 'rb') as file:
+        st.download_button(
+            label="Baixar Resultados",
+            data=file,
+            file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            
