@@ -108,7 +108,7 @@ if 'df_abs' in st.session_state:
         #        file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         #    )
-    st.markdown(uploaded_file.name)
+    #st.markdown(uploaded_file.name)
     st.dataframe(df)
 
 
