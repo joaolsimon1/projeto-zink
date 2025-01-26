@@ -64,7 +64,7 @@ st.title("Processamento de Dados")
 with st.sidebar:
     st.header("Envio de Arquivo")
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
-    st.cache_data.clear
+    st.cache_data.clear()
 
 if uploaded_file:
     # Ler o arquivo
