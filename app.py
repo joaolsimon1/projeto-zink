@@ -7,6 +7,9 @@ import io
 def process_excel(df):
     df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
     df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
+    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']] = (df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']]
+    .replace(',', '.', regex=True)  # Substitui vírgulas por pontos
+)
     cols_to_convert = ['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
     df[cols_to_convert] = df[cols_to_convert].astype(float, errors='ignore')
 
@@ -65,9 +68,18 @@ with st.sidebar:
 if uploaded_file:
     # Ler o arquivo
     if uploaded_file.name.endswith('.xlsx'):
-        df = pd.read_excel(uploaded_file)
+        try:
+            df = pd.read_excel(uploaded_file, engine='openpyxl')  # Use o engine explicitamente
+        except Exception as e:
+            st.error(f"Erro ao carregar o arquivo Excel: {e}")
     elif uploaded_file.name.endswith('.csv'):
-        df = pd.read_csv(uploaded_file, sep=";", header=None)
+        try:
+            df = pd.read_csv(uploaded_file, sep=";", header=None)  # Header ajustado
+        except Exception as e:
+            st.error(f"Erro ao carregar o arquivo CSV: {e}")
+
+    st.markdown(uploaded_file.name)
+    st.dataframe(df)
 
     # Botão para iniciar o processamento
     if st.button("Iniciar Processamento"):
