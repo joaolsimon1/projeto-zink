@@ -83,8 +83,6 @@ if 'uploaded_file' in st.session_state:
         except Exception as e:
             st.error(f"Erro ao carregar o arquivo CSV: {e}")
 
-    st.markdown(uploaded_file.name)
-    st.dataframe(df)
 
     # Botão para iniciar o processamento
     if st.button("Iniciar Processamento"):
