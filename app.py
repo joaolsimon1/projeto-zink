@@ -64,25 +64,23 @@ st.title("Processamento de Dados")
 with st.sidebar:
     st.header("Envio de Arquivo")
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv'])
-    if uploaded_file:
-        st.session_state['uploaded_file'] = uploaded_file  # Salva no session_state
+    st.cache_data.clear
 
-# Verifica se há um arquivo salvo no estado
-if 'df_abs' not in st.session_state:
-    #uploaded_file = st.session_state['uploaded_file']
-
+if uploaded_file:
     # Ler o arquivo
     if uploaded_file.name.endswith('.xlsx'):
         try:
-            df = pd.read_excel(uploaded_file, engine='openpyxl')
+            df = pd.read_excel(uploaded_file, engine='openpyxl')  # Use o engine explicitamente
         except Exception as e:
             st.error(f"Erro ao carregar o arquivo Excel: {e}")
     elif uploaded_file.name.endswith('.csv'):
         try:
-            df = pd.read_csv(uploaded_file, sep=";", header=None)
+            df = pd.read_csv(uploaded_file, sep=";", header=None)  # Header ajustado
         except Exception as e:
             st.error(f"Erro ao carregar o arquivo CSV: {e}")
 
+    st.markdown(uploaded_file.name)
+    st.dataframe(df)
 
     # Botão para iniciar o processamento
     if st.button("Iniciar Processamento"):
@@ -96,5 +94,20 @@ if 'df_abs' not in st.session_state:
     if 'df_abs' in st.session_state:
         st.markdown('>>>>>Gráficos<<<<')
 
+        # Botão de download
+        #with st.sidebar:
+        #    buffer = io.BytesIO()
+        #    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        #        st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
+        #        st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
+        #        st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
+        #    buffer.seek(0)
+
+        #    st.download_button(
+        #        label="Baixar Resultados",
+        #        data=buffer,
+        #        file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+        #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        #    )
 else:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
