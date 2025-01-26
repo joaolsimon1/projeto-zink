@@ -109,6 +109,6 @@ if 'df_abs' in st.session_state:
         #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         #    )
     #st.markdown(uploaded_file.name)
-    st.dataframe(df)
+    st.dataframe(st.session_state['df_abs'])
 
 
