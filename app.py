@@ -87,7 +87,7 @@ if uploaded_file:
         st.session_state['merged_data'] = merged_data
         st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
 
-else:
+elif 'df_abs' not in st.session_state:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
     # Exibir tabelas se o processamento foi concluído
 if 'df_abs' in st.session_state:
