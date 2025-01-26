@@ -68,8 +68,8 @@ with st.sidebar:
         st.session_state['uploaded_file'] = uploaded_file  # Salva no session_state
 
 # Verifica se há um arquivo salvo no estado
-if 'uploaded_file' in st.session_state:
-    uploaded_file = st.session_state['uploaded_file']
+if 'df_abs' not in st.session_state:
+    #uploaded_file = st.session_state['uploaded_file']
 
     # Ler o arquivo
     if uploaded_file.name.endswith('.xlsx'):
