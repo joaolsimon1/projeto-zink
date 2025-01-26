@@ -79,9 +79,6 @@ if uploaded_file:
         except Exception as e:
             st.error(f"Erro ao carregar o arquivo CSV: {e}")
 
-    st.markdown(uploaded_file.name)
-    st.dataframe(df)
-
     # Botão para iniciar o processamento
     if st.button("Iniciar Processamento"):
         df_abs, df_des, merged_data = process_excel(df)
@@ -90,9 +87,11 @@ if uploaded_file:
         st.session_state['merged_data'] = merged_data
         st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
 
+else:
+    st.info("Envie um arquivo Excel pela barra lateral para começar.")
     # Exibir tabelas se o processamento foi concluído
-    if 'df_abs' in st.session_state:
-        st.markdown('>>>>>Gráficos<<<<')
+if 'df_abs' in st.session_state:
+    st.markdown('>>>>>Gráficos<<<<')
 
         # Botão de download
         #with st.sidebar:
@@ -109,5 +108,7 @@ if uploaded_file:
         #        file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         #    )
-else:
-    st.info("Envie um arquivo Excel pela barra lateral para começar.")
+    st.markdown(uploaded_file.name)
+    st.dataframe(df)
+
+
