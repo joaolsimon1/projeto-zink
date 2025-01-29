@@ -72,7 +72,7 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
                 df_todos_ciclos,
                 x='Min',
                 y='AcumuladoABS',
-                color='Ciclo',
+                color='NUMERO_CICLO',
                 title='Absorção'
             )
             fig.update_layout(xaxis_title="Tempo (Min)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
@@ -105,7 +105,7 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
                 df_todos_ciclos2,
                 x='Min',
                 y='AcumuladoDES',
-                color='Ciclo',
+                color='NUMERO_CICLO',
                 title='Dessorção'
             )
             fig2.update_layout(xaxis_title="Tempo (Min)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
