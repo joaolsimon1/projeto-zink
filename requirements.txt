@@ -4,3 +4,4 @@ datetime
 matplotlib
 openpyxl
 xlsxwriter
+plotly-express
