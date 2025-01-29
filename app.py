@@ -1,61 +1,9 @@
 import streamlit as st
 import pandas as pd
-import datetime as dt
-import io
+import plotly.express as px
+from function import process_excel
 
-@st.cache_data
-def process_excel(df):
-    df.columns = ['DATAHORA', 'MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
-    df['DATAHORA'] = pd.to_datetime(df['DATAHORA'])
-    df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']] = (df[['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']]
-    .replace(',', '.', regex=True)  # Substitui vírgulas por pontos
-)
-    cols_to_convert = ['MFC02_PV', 'MFC05_PV', 'PC02_PV', 'BT_PV', 'ETAPA_ATUAL', 'NUMERO_CICLO']
-    df[cols_to_convert] = df[cols_to_convert].astype(float, errors='ignore')
-
-    # Fator de Correção
-    df_etapa_1 = df[df['ETAPA_ATUAL'] == 1]
-    df_etapa_1 = df_etapa_1[(df_etapa_1['BT_PV'] > 39.7) & (df_etapa_1['BT_PV'] < 40.2)]
-    df_etapa_1 = df_etapa_1.sort_values(by=['NUMERO_CICLO', 'DATAHORA'])
-    df_etapa_1 = df_etapa_1.groupby('NUMERO_CICLO').tail(150)
-    
-    media = df_etapa_1.groupby('NUMERO_CICLO').agg(
-        media_c3=('MFC05_PV', 'mean'),
-        media_c2=('MFC02_PV', 'mean')
-    ).reset_index()
-
-    media['erro_p'] = (media['media_c3'] - media['media_c2']) / media['media_c3'] * 100
-    media['fator'] = 1 - (media['erro_p'] / 100)
-
-    df = df.merge(media[['NUMERO_CICLO', 'erro_p', 'fator']], on='NUMERO_CICLO', how='left')
-
-    # Absorção
-    df_abs = df[df['ETAPA_ATUAL'] == 4].copy()
-    df_abs['MFC05_corrigido'] = df_abs['MFC05_PV'] * df_abs['fator']
-    df_abs['DiffABS'] = df_abs['MFC02_PV'] - df_abs['MFC05_corrigido']
-    df_abs['Diff_corrigidaABS'] = (df_abs['DiffABS'] * 5 / 60).where(df_abs['PC02_PV'] > 3.485, 0)
-    df_abs['AcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['Diff_corrigidaABS'].cumsum()
-    df_abs['MaxAcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['AcumuladoABS'].transform('max')
-
-    # Dessorção
-    df_des = df[df['ETAPA_ATUAL'] == 6].copy()
-    df_des['DiffDES'] = df_des['MFC02_PV'] - df_des['MFC05_PV']
-    df_des['Diff_corrigidaDES'] = df_des['DiffDES'] * 5 / 60
-    df_des['AcumuladoDES'] = df_des.groupby('NUMERO_CICLO')['Diff_corrigidaDES'].cumsum()
-    df_des['MinAcumuladoDES'] = df_des.groupby('NUMERO_CICLO')['AcumuladoDES'].transform('min')
-
-    # Resultado Final
-    des_aggregated = df_des.groupby('NUMERO_CICLO').agg(
-        MinAcumuladoDES=('AcumuladoDES', 'min')
-    ).reset_index()
-
-    abs_aggregated = df_abs.groupby('NUMERO_CICLO').agg(
-        MaxAcumuladoABS=('AcumuladoABS', 'max')
-    ).reset_index()
-
-    merged_data = pd.merge(des_aggregated, abs_aggregated, on='NUMERO_CICLO')
-
-    return df_abs, df_des, merged_data
+st.set_page_config(layout="wide")
 
 # Configuração da interface do Streamlit
 st.title("Processamento de Dados")
@@ -68,47 +16,105 @@ with st.sidebar:
 
 if uploaded_file:
     # Ler o arquivo
-    if uploaded_file.name.endswith('.xlsx'):
-        try:
-            df = pd.read_excel(uploaded_file, engine='openpyxl')  # Use o engine explicitamente
-        except Exception as e:
-            st.error(f"Erro ao carregar o arquivo Excel: {e}")
-    elif uploaded_file.name.endswith('.csv'):
-        try:
-            df = pd.read_csv(uploaded_file, sep=";", header=None)  # Header ajustado
-        except Exception as e:
-            st.error(f"Erro ao carregar o arquivo CSV: {e}")
+    try:
+        if uploaded_file.name.endswith('.xlsx'):
+            df = pd.read_excel(uploaded_file, engine='openpyxl')
+        elif uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file, sep=";", header=None)
+    except Exception as e:
+        st.error(f"Erro ao carregar o arquivo: {e}")
 
-    # Botão para iniciar o processamento
-    if st.button("Iniciar Processamento"):
-        df_abs, df_des, merged_data = process_excel(df)
-        st.session_state['df_abs'] = df_abs
-        st.session_state['df_des'] = df_des
-        st.session_state['merged_data'] = merged_data
-        st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
+    with st.sidebar:
+        if st.button("Iniciar Processamento"):
+            df_abs, df_des, merged_data = process_excel(df)
+            st.session_state['df_abs'] = df_abs
+            st.session_state['df_des'] = df_des
+            st.session_state['merged_data'] = merged_data
+            st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
 
 elif 'df_abs' not in st.session_state:
     st.info("Envie um arquivo Excel pela barra lateral para começar.")
-    # Exibir tabelas se o processamento foi concluído
-if 'df_abs' in st.session_state:
-    st.markdown('>>>>>Gráficos<<<<')
 
-        # Botão de download
-        #with st.sidebar:
-        #    buffer = io.BytesIO()
-        #    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        #        st.session_state['df_abs'].to_excel(writer, sheet_name='4_Absorção', index=False)
-        #        st.session_state['df_des'].to_excel(writer, sheet_name='6_Dessorção Corrigida', index=False)
-        #        st.session_state['merged_data'].to_excel(writer, sheet_name='Tabela Final', index=False)
-        #    buffer.seek(0)
+if 'df_abs' in st.session_state and 'df_des' in st.session_state:
+    container = st.container()
+    all = st.checkbox("Selecionar todos os ciclos")
 
-        #    st.download_button(
-        #        label="Baixar Resultados",
-        #        data=buffer,
-        #        file_name=f'Resultados_Industriais_{dt.datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-        #        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        #    )
-    #st.markdown(uploaded_file.name)
-    #st.dataframe(st.session_state['df_abs'])
+    if all:
+        selected_options = container.multiselect(
+            "Selecione um ou mais ciclos:",
+            st.session_state['df_abs']['NUMERO_CICLO'].unique(),
+            st.session_state['df_abs']['NUMERO_CICLO'].unique()
+        )
+    else:
+        selected_options = container.multiselect(
+            "Selecione um ou mais ciclos:",
+            st.session_state['df_abs']['NUMERO_CICLO'].unique()
+        )
 
+    if selected_options:
+        col1, col2 = st.columns(2)
 
+        with col1:
+            df1_filtrado = st.session_state['df_abs']
+            df1_filtrado = df1_filtrado[df1_filtrado['NUMERO_CICLO'].isin(selected_options)]
+            resultados = []
+            df1_filtrado = df1_filtrado.set_index('DATAHORA')
+            for i in range(int(df1_filtrado['NUMERO_CICLO'].max()) + 1):
+                aux1 = df1_filtrado.loc[df1_filtrado['NUMERO_CICLO'] == i]
+                aux1 = aux1['AcumuladoABS'].resample('T').mean().reset_index()
+                aux1.columns = ['DATAHORA', 'AcumuladoABS']
+                aux1 = aux1.loc[pd.notna(aux1['AcumuladoABS'])].reset_index(drop=True)
+                aux1['Min'] = aux1.index
+                aux1['NUMERO_CICLO'] = i
+                resultados.append(aux1)
+            df_todos_ciclos = pd.concat(resultados).reset_index(drop=True)
+            fig = px.line(
+                df_todos_ciclos,
+                x='Min',
+                y='AcumuladoABS',
+                color='Ciclo',
+                title='Absorção'
+            )
+            fig.update_layout(xaxis_title="Tempo (Min)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
+            st.plotly_chart(fig, use_container_width=True)
+            st.write("Dataframe utilizado no gráfico de Absorção:")
+            st.dataframe(df_todos_ciclos, use_container_width=True, hide_index=True)
+            st.download_button(
+                label="Baixar dados de Absorção como .txt",
+                data=df_todos_ciclos.to_csv(index=False, sep="\t"),
+                file_name='dados_absorcao.txt',
+                mime='text/plain'
+            )
+
+            
+        with col2:
+            df2_filtrado = st.session_state['df_des']
+            df2_filtrado = df2_filtrado[df2_filtrado['NUMERO_CICLO'].isin(selected_options)]
+            resultados = []
+            df2_filtrado = df2_filtrado.set_index('DATAHORA')
+            for i in range(int(df2_filtrado['NUMERO_CICLO'].max()) + 1):
+                aux2 = df2_filtrado.loc[df2_filtrado['NUMERO_CICLO'] == i]
+                aux2 = aux2['AcumuladoDES'].resample('T').mean().reset_index()
+                aux2.columns = ['DATAHORA', 'AcumuladoDES']
+                aux2 = aux2.loc[pd.notna(aux2['AcumuladoDES'])].reset_index(drop=True)
+                aux2['Min'] = aux2.index
+                aux2['NUMERO_CICLO'] = i
+                resultados.append(aux2)
+            df_todos_ciclos2 = pd.concat(resultados).reset_index(drop=True)
+            fig2 = px.line(
+                df_todos_ciclos2,
+                x='Min',
+                y='AcumuladoDES',
+                color='Ciclo',
+                title='Dessorção'
+            )
+            fig2.update_layout(xaxis_title="Tempo (Min)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
+            st.plotly_chart(fig2, use_container_width=True)
+            st.write("Dataframe utilizado no gráfico de Dessorção:")
+            st.dataframe(df_todos_ciclos2, use_container_width=True, hide_index=True)
+            st.download_button(
+                label="Baixar dados de Dessorção como .txt",
+                data=df_todos_ciclos2.to_csv(index=False, sep="\t"),
+                file_name='dados_dessorcao.txt',
+                mime='text/plain'
+            )
