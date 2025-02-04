@@ -1,0 +1,3 @@
+["app.py"]  # Nome do arquivo da página inicial
+name = "🏠 Início"  # Nome personalizado para a página inicial
+icon = "🏠"  # Ícone personalizado (opcional)
