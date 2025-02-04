@@ -3,45 +3,57 @@ import pandas as pd
 import plotly.express as px
 from function import process_excel
 
-st.set_page_config(layout="wide",
-                   page_title="App Zink",  # Título da página
-                 page_icon="⚛️")  # Ícone da página (opcional))
+# Configuração da página
+st.set_page_config(
+    layout="wide",
+    page_title="App Zink",  # Título da página
+    page_icon="⚛️"  # Ícone da página (opcional)
+)
 
-# Configuração da interface do Streamlit
+# Título da aplicação
 st.title("Processamento de Dados")
 
 # Sidebar para upload de arquivo
 with st.sidebar:
     st.header("Envio de Arquivo")
     uploaded_file = st.file_uploader("Envie o arquivo Excel ou CSV", type=['xlsx', 'csv', 'txt'])
-    st.cache_data.clear()
 
+# Verifica se há um arquivo carregado ou se os dados já estão no session_state
 if uploaded_file:
-    # Ler o arquivo
+    # Se um novo arquivo foi carregado, processa os dados
     try:
         if uploaded_file.name.endswith('.xlsx'):
             df = pd.read_excel(uploaded_file, engine='openpyxl')
         elif uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file, sep=";", header=None)
-
         elif uploaded_file.name.endswith('.txt'):
-            # Ler o arquivo TXT
             df = pd.read_csv(uploaded_file, sep="\t", header=None)  # Usar \t para separador de tabulação
-            
+
+        # Armazena o arquivo carregado no session_state
+        st.session_state['uploaded_file'] = uploaded_file
+        st.session_state['df'] = df
+
     except Exception as e:
         st.error(f"Erro ao carregar o arquivo: {e}")
 
     with st.sidebar:
         if st.button("Iniciar Processamento"):
+            # Processa os dados e armazena no session_state
             df_abs, df_des, merged_data = process_excel(df)
             st.session_state['df_abs'] = df_abs
             st.session_state['df_des'] = df_des
             st.session_state['merged_data'] = merged_data
-            st.success("Processamento concluído! (Os dados estão na aba 'Tabelas')")
+            st.success("Processamento concluído!")
 
-elif 'df_abs' not in st.session_state:
-    st.info("Envie um arquivo Excel pela barra lateral para começar.")
+elif 'df_abs' in st.session_state:
+    # Se os dados já estão no session_state, exibe uma mensagem informativa
+    st.info("Dados já carregados e processados.")
 
+else:
+    # Se nenhum arquivo foi carregado e não há dados no session_state, exibe uma mensagem
+    st.info("Envie um arquivo padronizado pela barra lateral para começar.")
+
+# Se os dados processados estão no session_state, exibe as opções e gráficos
 if 'df_abs' in st.session_state and 'df_des' in st.session_state:
     container = st.container()
     all = st.checkbox("Selecionar todos os ciclos")
@@ -77,13 +89,9 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
             df_todos_ciclos = pd.concat(resultados).reset_index(drop=True)
 
             df_pivot = df_todos_ciclos.pivot(index='Tempo', columns='NUMERO_CICLO', values='AcumuladoABS')
-
             df_pivot.columns = [f"Acum ABS C{n}" for n in df_pivot.columns]
-
             df_pivot = df_pivot.reset_index().rename(columns={'Tempo': 'Tempo'})
-
             df_pivot = df_pivot.round(3)
-
             df_pivot = df_pivot.applymap(lambda x: str(x).replace('.', ',') if isinstance(x, (int, float)) else x)
 
             fig = px.line(
@@ -93,12 +101,10 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
                 color='NUMERO_CICLO',
                 title='Absorção'
             )
-            fig.update_layout(xaxis_title="Tempo (Minutos)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
+            fig.update_layout(xaxis_title="Tempo (Minutos)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5, legend_title_text="Ciclos")
             st.plotly_chart(fig, use_container_width=True)
             st.write("Dataframe utilizado no gráfico de Absorção:")
-            #st.dataframe(df_todos_ciclos, use_container_width=True, hide_index=True)
             st.dataframe(df_pivot, use_container_width=True, hide_index=True)
-
 
             st.download_button(
                 label="Baixar dados de Absorção como .txt",
@@ -107,7 +113,6 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
                 mime='text/plain'
             )
 
-            
         with col2:
             df2_filtrado = st.session_state['df_des']
             df2_filtrado = df2_filtrado[df2_filtrado['NUMERO_CICLO'].isin(selected_options)]
@@ -124,13 +129,9 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
             df_todos_ciclos2 = pd.concat(resultados).reset_index(drop=True)
 
             df_pivot2 = df_todos_ciclos2.pivot(index='Tempo', columns='NUMERO_CICLO', values='AcumuladoDES')
-
             df_pivot2.columns = [f"Acum DES C{n}" for n in df_pivot2.columns]
-
             df_pivot2 = df_pivot2.reset_index().rename(columns={'Tempo': 'Tempo'})
-
             df_pivot2 = df_pivot2.round(3)
-
             df_pivot2 = df_pivot2.applymap(lambda x: str(x).replace('.', ',') if isinstance(x, (int, float)) else x)
 
             fig2 = px.line(
@@ -140,11 +141,10 @@ if 'df_abs' in st.session_state and 'df_des' in st.session_state:
                 color='NUMERO_CICLO',
                 title='Dessorção'
             )
-            fig2.update_layout(xaxis_title="Tempo (Minutos)", yaxis_title="CO₂ absorvido acumulado (mg)", title_x=0.5)
+            fig2.update_layout(xaxis_title="Tempo (Minutos)", yaxis_title="CO₂ dessorvido acumulado (mg)", title_x=0.5, legend_title_text="Ciclos")
             st.plotly_chart(fig2, use_container_width=True)
             st.write("Dataframe utilizado no gráfico de Dessorção:")
-            #st.dataframe(df_todos_ciclos2, use_container_width=True, hide_index=True)
-            st.dataframe(df_pivot, use_container_width=True, hide_index=True)
+            st.dataframe(df_pivot2, use_container_width=True, hide_index=True)
 
             st.download_button(
                 label="Baixar dados de Dessorção como .txt",
