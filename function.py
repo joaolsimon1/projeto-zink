@@ -36,6 +36,7 @@ def process_excel(df):
     df_abs['Diff_corrigidaABS'] = (df_abs['DiffABS'] * 5 / 60).where(df_abs['PC02_PV'] > 3.485, 0)
     df_abs['AcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['Diff_corrigidaABS'].cumsum()
     df_abs['MaxAcumuladoABS'] = df_abs.groupby('NUMERO_CICLO')['AcumuladoABS'].transform('max')
+    
 
     # Dessorção
     df_des = df[df['ETAPA_ATUAL'] == 6].copy()
@@ -54,5 +55,6 @@ def process_excel(df):
     ).reset_index()
 
     merged_data = pd.merge(des_aggregated, abs_aggregated, on='NUMERO_CICLO')
+    merged_data.loc[merged_data['MaxAcumuladoABS'].isnull(), 'MaxAcumuladoABS'] = 1
 
     return df_abs, df_des, merged_data

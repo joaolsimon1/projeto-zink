@@ -10,8 +10,8 @@ st.set_page_config(
     page_icon="⚛️"  # Ícone da página (opcional)
 )
 
-# Título da aplicação
-st.title("Processamento de Dados")
+# Título simplificado
+st.title("Análise de Dados de Captura de CO₂")
 
 # Sidebar para upload de arquivo
 with st.sidebar:
